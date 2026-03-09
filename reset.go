@@ -7,7 +7,7 @@ func (cfg *apiConfig) handleReset(w http.ResponseWriter, r *http.Request) {
 
 	err := cfg.queries.ResetUsers(r.Context())
 	if err != nil {
-		responseWithError(w, "Something went wrong")
+		responseWithError(w, 400, "Something went wrong")
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

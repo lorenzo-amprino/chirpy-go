@@ -14,11 +14,11 @@ func handleValidateChirp(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		responseWithError(w, "Something went wrong")
+		responseWithError(w, 400, "Something went wrong")
 		return
 	}
 	if len(req.Body) > 140 {
-		responseWithError(w, "Chirp is too long")
+		responseWithError(w, 400, "Chirp is too long")
 		return
 	}
 

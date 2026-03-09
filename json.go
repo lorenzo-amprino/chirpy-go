@@ -10,12 +10,12 @@ type ChirpValidateResponse struct {
 	Valid bool   `json:"valid"`
 }
 
-func responseWithError(w http.ResponseWriter, message string) {
+func responseWithError(w http.ResponseWriter, status int, message string) {
 	res := ChirpValidateResponse{
 		Error: message,
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(400)
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(res)
 }
 

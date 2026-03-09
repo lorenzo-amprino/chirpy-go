@@ -15,6 +15,10 @@ func main() {
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		panic("JWT_SECRET is not set")
+	}
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		panic(err)
@@ -31,6 +35,7 @@ func main() {
 
 	apiConfig := &apiConfig{}
 	apiConfig.queries = dbQueries
+	apiConfig.jwtSecret = secret
 	serveMux.Handle("/app/", http.StripPrefix("/app/", apiConfig.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	serveMux.HandleFunc("GET /api/healthz", handleHealthz)
 	serveMux.HandleFunc("GET /admin/metrics", apiConfig.handleMetrics)
@@ -38,6 +43,9 @@ func main() {
 	serveMux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
 	serveMux.HandleFunc("POST /api/users", apiConfig.handleCreateUser)
 	serveMux.HandleFunc("POST /api/chirps", apiConfig.handleCreateChirp)
+	serveMux.HandleFunc("GET /api/chirps", apiConfig.getChirpsHandler)
+	serveMux.HandleFunc("GET /api/chirps/{id}", apiConfig.getChirpHandler)
+	serveMux.HandleFunc("POST /api/login", apiConfig.handleLogin)
 	server.ListenAndServe()
 
 }
@@ -45,4 +53,5 @@ func main() {
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	queries        *database.Queries
+	jwtSecret      string
 }

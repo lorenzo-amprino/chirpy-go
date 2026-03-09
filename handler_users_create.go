@@ -1,6 +1,8 @@
 package main
 
 import (
+	"chirpy/internal/auth"
+	"chirpy/internal/database"
 	"encoding/json"
 	"net/http"
 )
@@ -10,11 +12,13 @@ type User struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 	Email     string `json:"email"`
+	Token     string `json:"token"`
 }
 
 func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	req := struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}{}
 
 	type response struct {
@@ -23,13 +27,22 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		responseWithError(w, "Something went wrong")
+		responseWithError(w, 400, "Something went wrong")
 		return
 	}
 
-	user, err := cfg.queries.CreateUser(r.Context(), req.Email)
+	hashedPassword, err := auth.HashPassword(req.Password)
 	if err != nil {
-		responseWithError(w, "Something went wrong")
+		responseWithError(w, 400, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.queries.CreateUser(r.Context(), database.CreateUserParams{
+		Email:          req.Email,
+		HashedPassword: hashedPassword,
+	})
+	if err != nil {
+		responseWithError(w, 400, "Something went wrong")
 		return
 	}
 
