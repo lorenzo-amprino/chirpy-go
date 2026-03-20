@@ -12,3 +12,18 @@ DELETE FROM users;
 -- name: GetUserByEmail :one
 SELECT * FROM users
 WHERE email = $1;
+
+-- name: UpdateUser :one
+UPDATE users
+SET updated_at = NOW(),
+    email = COALESCE($2, email),
+    hashed_password = COALESCE($3, hashed_password)
+WHERE id = $1
+RETURNING *;
+
+-- name: UpgradeToChirpyRed :one
+UPDATE users
+SET updated_at = NOW(),
+    is_chirpy_red = true
+WHERE id = $1
+RETURNING *;

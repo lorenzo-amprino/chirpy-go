@@ -3,8 +3,10 @@ package main
 import (
 	"chirpy/internal/auth"
 	"chirpy/internal/database"
+	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -65,12 +67,30 @@ func (c *apiConfig) handleCreateChirp(w http.ResponseWriter, r *http.Request) {
 
 func (c *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
 
-	chirps, err := c.queries.GetAllChirps(r.Context())
-	if err != nil {
-		responseWithError(w, 400, "Something went wrong")
-		return
+	authorId := r.URL.Query().Get("author_id")
+	sorting := r.URL.Query().Get("sort")
+	var chirps []database.Chirp
+	var err error
+	if authorId != "" {
+		chirps, err = c.queries.GetChirpsByAuthorId(context.Background(), uuid.MustParse(authorId))
+		if err != nil {
+			responseWithError(w, 400, "Something went wrong")
+			return
+		}
+	} else {
+		chirps, err = c.queries.GetAllChirps(r.Context())
+		if err != nil {
+			responseWithError(w, 400, "Something went wrong")
+			return
+		}
 	}
 
+	if sorting == "desc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.After(chirps[j].CreatedAt) })
+	}
+	if sorting == "asc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.Before(chirps[j].CreatedAt) })
+	}
 	type returnVals struct {
 		Id        uuid.UUID `json:"id"`
 		CreatedAt string    `json:"created_at"`

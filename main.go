@@ -16,6 +16,7 @@ func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	secret := os.Getenv("JWT_SECRET")
+	polka_api_key := os.Getenv("POLKA_API_KEY")
 	if secret == "" {
 		panic("JWT_SECRET is not set")
 	}
@@ -36,6 +37,7 @@ func main() {
 	apiConfig := &apiConfig{}
 	apiConfig.queries = dbQueries
 	apiConfig.jwtSecret = secret
+	apiConfig.polka_api_key = polka_api_key
 	serveMux.Handle("/app/", http.StripPrefix("/app/", apiConfig.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	serveMux.HandleFunc("GET /api/healthz", handleHealthz)
 	serveMux.HandleFunc("GET /admin/metrics", apiConfig.handleMetrics)
@@ -46,6 +48,11 @@ func main() {
 	serveMux.HandleFunc("GET /api/chirps", apiConfig.getChirpsHandler)
 	serveMux.HandleFunc("GET /api/chirps/{id}", apiConfig.getChirpHandler)
 	serveMux.HandleFunc("POST /api/login", apiConfig.handleLogin)
+	serveMux.HandleFunc("POST /api/refresh", apiConfig.handleRefreshToken)
+	serveMux.HandleFunc("POST /api/revoke", apiConfig.handleRevokeToken)
+	serveMux.HandleFunc("PUT /api/users", apiConfig.handleUpdateUser)
+	serveMux.HandleFunc("DELETE /api/chirps/{id}", apiConfig.handleDeleteChirp)
+	serveMux.HandleFunc("POST /api/polka/webhooks", apiConfig.handlePolkaWebhook)
 	server.ListenAndServe()
 
 }
@@ -54,4 +61,5 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	queries        *database.Queries
 	jwtSecret      string
+	polka_api_key  string
 }
